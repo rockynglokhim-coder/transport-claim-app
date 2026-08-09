@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#13342d">
+  <title>車費 Claim</title>
+  <link rel="preconnect" href="https://accounts.google.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section id="setupView" class="card setup hidden" aria-live="polite">
+      <div class="brand-mark">車</div>
+      <p class="eyebrow">TRANSPORT CLAIM</p>
+      <h1>尚欠 Google 設定</h1>
+      <p>網站已安全上線。完成 OAuth Client ID 與 Apps Script 部署後，就可以用 Google Account 登入。</p>
+      <details><summary>設定人員指引</summary><ol><li>把 <code>config.example.js</code> 複製為 <code>config.js</code></li><li>填入公開的 Web Client ID 與 Apps Script Web App URL</li><li>重新部署</li></ol></details>
+    </section>
+
+    <section id="loginView" class="card login hidden">
+      <div class="brand-mark">車</div>
+      <p class="eyebrow">TRANSPORT CLAIM</p>
+      <h1>車費 Claim</h1>
+      <p class="muted">登入後新增車費、查看本月總數與最近紀錄。</p>
+      <div id="googleButton" class="google-button"></div>
+      <p id="loginError" class="error" role="alert"></p>
+      <p class="privacy">只接受 Users 表內已啟用的 Google 帳戶。</p>
+    </section>
+
+    <section id="appView" class="hidden">
+      <header class="topbar">
+        <div><p class="eyebrow">車費 CLAIM</p><h1 id="welcome">你好</h1></div>
+        <button id="logoutButton" class="icon-button" aria-label="登出">登出</button>
+      </header>
+      <section class="balance-card">
+        <p>本月已申報</p><strong id="monthTotal">HK$0.00</strong><span id="monthLabel"></span>
+      </section>
+      <button id="newClaimButton" class="primary">＋ 新增車費</button>
+      <section class="recent"><div class="section-title"><h2>最近紀錄</h2><button id="refreshButton">更新</button></div><div id="claimList" class="claim-list"><p class="muted">載入中…</p></div></section>
+    </section>
+  </main>
+
+  <dialog id="claimDialog">
+    <form id="claimForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">NEW CLAIM</p><h2>新增車費</h2></div><button type="button" id="closeDialog" class="close">×</button></div>
+      <label>日期<input id="date" name="date" type="date" required></label>
+      <div class="grid-2"><label>起點<input name="origin" autocomplete="off" required></label><label>終點<input name="destination" autocomplete="off" required></label></div>
+      <label>交通方式<select name="transport" required><option>MTR</option><option>巴士</option><option>的士</option><option>私家車</option><option>隧道</option><option>泊車</option><option>其他</option></select></label>
+      <div class="grid-2"><label>方向<select name="direction"><option>單程</option><option>來回</option></select></label><label>金額（HK$）<input name="amount" type="number" min="0" step="0.01" required></label></div>
+      <label>Project / Site<input name="project" autocomplete="off"></label>
+      <label>備註<textarea name="notes" rows="2"></textarea></label>
+      <p id="formError" class="error" role="alert"></p>
+      <button id="saveButton" class="primary" type="submit">儲存車費</button>
+    </form>
+  </dialog>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

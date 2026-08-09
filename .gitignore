@@ -1,0 +1,7 @@
+.DS_Store
+.clasp.json
+node_modules/
+*.log
+.env
+.env.*
+!config.example.js
