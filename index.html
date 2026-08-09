@@ -7,6 +7,7 @@
   <title>車費 Claim</title>
   <link rel="preconnect" href="https://accounts.google.com">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="location.css">
 </head>
 <body>
   <main class="shell">
@@ -22,7 +23,7 @@
       <div class="brand-mark">車</div>
       <p class="eyebrow">TRANSPORT CLAIM</p>
       <h1>車費 Claim</h1>
-      <p class="muted">登入後新增車費、查看本月總數與最近紀錄。</p>
+      <p class="muted">登入後新增車費、查看本月總數與所有紀錄。</p>
       <div id="googleButton" class="google-button"></div>
       <p id="loginError" class="error" role="alert"></p>
       <p class="privacy">只接受 Users 表內已啟用的 Google 帳戶。</p>
@@ -37,7 +38,7 @@
         <p>本月已申報</p><strong id="monthTotal">HK$0.00</strong><span id="monthLabel"></span>
       </section>
       <button id="newClaimButton" class="primary">＋ 新增車費</button>
-      <section class="recent"><div class="section-title"><h2>最近紀錄</h2><button id="refreshButton">更新</button></div><div id="claimList" class="claim-list"><p class="muted">載入中…</p></div></section>
+      <section class="recent"><div class="section-title"><h2>本月所有紀錄</h2><button id="refreshButton">更新</button></div><div id="claimList" class="claim-list"><p class="muted">載入中…</p></div></section>
     </section>
   </main>
 
@@ -45,7 +46,26 @@
     <form id="claimForm" method="dialog">
       <div class="dialog-head"><div><p class="eyebrow">NEW CLAIM</p><h2>新增車費</h2></div><button type="button" id="closeDialog" class="close">×</button></div>
       <label>日期<input id="date" name="date" type="date" required></label>
-      <div class="grid-2"><label>起點<input name="origin" autocomplete="off" required></label><label>終點<input name="destination" autocomplete="off" required></label></div>
+      <fieldset class="location-picker">
+        <legend>起點</legend>
+        <div class="location-grid">
+          <label>地域<select id="originRegion" required><option value="">請選擇</option></select></label>
+          <label>地區<select id="originDistrict" required disabled><option value="">先選地域</option></select></label>
+          <label>港鐵站／地點<select id="originStation" required disabled><option value="">先選地區</option></select></label>
+        </div>
+        <label id="originOtherWrap" class="hidden">其他起點<input id="originOther" autocomplete="off"></label>
+        <input id="originValue" name="origin" type="hidden">
+      </fieldset>
+      <fieldset class="location-picker">
+        <legend>終點</legend>
+        <div class="location-grid">
+          <label>地域<select id="destinationRegion" required><option value="">請選擇</option></select></label>
+          <label>地區<select id="destinationDistrict" required disabled><option value="">先選地域</option></select></label>
+          <label>港鐵站／地點<select id="destinationStation" required disabled><option value="">先選地區</option></select></label>
+        </div>
+        <label id="destinationOtherWrap" class="hidden">其他終點<input id="destinationOther" autocomplete="off"></label>
+        <input id="destinationValue" name="destination" type="hidden">
+      </fieldset>
       <label>交通方式<select name="transport" required><option>MTR</option><option>巴士</option><option>的士</option><option>私家車</option><option>隧道</option><option>泊車</option><option>其他</option></select></label>
       <div class="grid-2"><label>方向<select name="direction"><option>單程</option><option>來回</option></select></label><label>金額（HK$）<input name="amount" type="number" min="0" step="0.01" required></label></div>
       <label>Project / Site<input name="project" autocomplete="off"></label>

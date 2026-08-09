@@ -36,7 +36,7 @@ function listClaims_(user) {
   const rows = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims').getDataRange().getValues();
   const now = new Date();
   const claims = rows.slice(1).filter((r) => r[1] === user.employeeId && validDate_(r[2], now)).map((r) => ({id:r[0],date:formatDate_(r[2]),origin:r[3],destination:r[4],transport:r[5],direction:r[6],amount:Number(r[7]) || 0,project:r[8],notes:r[9],status:r[11]})).reverse();
-  return {ok:true, claims:claims.slice(0,20), monthTotal:claims.reduce((sum,c) => sum + c.amount, 0)};
+  return {ok:true, claims, monthTotal:claims.reduce((sum,c) => sum + c.amount, 0)};
 }
 
 function createClaim_(user, p) {
