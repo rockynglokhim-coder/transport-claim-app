@@ -1,6 +1,6 @@
 const SPREADSHEET_ID = '1tIyeiM90Q6sQR7J-GOvO--pKawCXSQKrUdjCG96C5CY';
 // Public OAuth Web Client ID. This is not a client secret.
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '61098226956-fa3jl6huugnbf6dlbvm52i1l8vpsa467.apps.googleusercontent.com';
 
 function doGet() {
   return json_({ok: true, service: 'transport-claim-api'});
