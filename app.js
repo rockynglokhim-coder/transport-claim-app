@@ -62,11 +62,12 @@
   $("logoutButton").addEventListener("click", () => { google.accounts.id.disableAutoSelect(); location.reload(); });
   $("claimForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     const button = $("saveButton"); button.disabled = true; $("formError").textContent = "";
     try {
-      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const values = Object.fromEntries(new FormData(form));
       await api("createClaim", values);
-      event.currentTarget.reset(); $("claimDialog").close(); await loadClaims();
+      form.reset(); $("claimDialog").close(); await loadClaims();
     } catch (error) { $("formError").textContent = error.message; }
     finally { button.disabled = false; }
   });
