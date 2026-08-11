@@ -193,9 +193,7 @@
     $("printMonth").textContent = Number.isNaN(monthDate.getTime())
       ? $("monthLabel").textContent
       : new Intl.DateTimeFormat("zh-HK", {year:"numeric", month:"long"}).format(monthDate);
-    $("printEmployeeId").textContent = text(profile.employeeId);
     $("printEmployeeName").textContent = text(profile.name);
-    $("printEmployeeEmail").textContent = text(profile.email);
     $("printClaimRows").replaceChildren(...currentClaims.map((claim, index) => {
       const row = document.createElement("tr");
       [index + 1, claim.date, `${text(claim.origin)} → ${text(claim.destination)}`,
@@ -216,7 +214,7 @@
   $("refreshButton").addEventListener("click", () => loadClaims().catch((e) => alert(e.message)));
   $("printClaimButton").addEventListener("click", () => {
     preparePrintReport();
-    document.title = `車費Claim-${$("printMonth").textContent}-${profile.employeeId}`;
+    document.title = `車費Claim-${$("printMonth").textContent}-${profile.name}`;
     window.print();
   });
   window.addEventListener("afterprint", () => { document.title = "車費 Claim"; });
