@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#13342d">
   <title>車費 Claim</title>
   <link rel="preconnect" href="https://accounts.google.com">
-  <link rel="stylesheet" href="styles.css?v=20260811-2">
-  <link rel="stylesheet" href="location.css?v=20260811-2">
+  <link rel="stylesheet" href="styles.css?v=20260812-1">
+  <link rel="stylesheet" href="location.css?v=20260812-1">
 </head>
 <body>
   <main class="shell">
@@ -38,7 +38,26 @@
         <p>本月已申報</p><strong id="monthTotal">HK$0.00</strong><span id="monthLabel"></span>
       </section>
       <button id="newClaimButton" class="primary">＋ 新增車費</button>
+      <button id="printClaimButton" class="secondary" disabled>列印／儲存本月 Claim PDF</button>
       <section class="recent"><div class="section-title"><h2>本月所有紀錄</h2><button id="refreshButton">更新</button></div><div id="claimList" class="claim-list"><p class="muted">載入中…</p></div></section>
+    </section>
+
+    <section id="printReport" class="print-report" aria-hidden="true">
+      <header class="print-report-head">
+        <div><p>TRANSPORT EXPENSE CLAIM</p><h1>每月車費報銷表</h1></div>
+        <strong id="printMonth"></strong>
+      </header>
+      <dl class="print-profile">
+        <div><dt>員工編號</dt><dd id="printEmployeeId"></dd></div>
+        <div><dt>姓名</dt><dd id="printEmployeeName"></dd></div>
+        <div><dt>電郵</dt><dd id="printEmployeeEmail"></dd></div>
+      </dl>
+      <table>
+        <thead><tr><th>#</th><th>日期</th><th>行程</th><th>交通／方向</th><th>Project / 備註</th><th>金額</th></tr></thead>
+        <tbody id="printClaimRows"></tbody>
+        <tfoot><tr><td colspan="5">本月申報總額</td><td id="printTotal"></td></tr></tfoot>
+      </table>
+      <footer><span>申請人簽署：____________________</span><span>批核人簽署：____________________</span></footer>
     </section>
   </main>
 
@@ -76,7 +95,7 @@
     </form>
   </dialog>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="config.js?v=20260811-2"></script>
-  <script src="app.js?v=20260811-2"></script>
+  <script src="config.js?v=20260812-1"></script>
+  <script src="app.js?v=20260812-1"></script>
 </body>
 </html>
