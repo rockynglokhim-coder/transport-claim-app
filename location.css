@@ -41,8 +41,12 @@ input[readonly] {
   font-weight: 800;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .location-grid {
     grid-template-columns: 1fr;
+  }
+
+  .location-grid select {
+    min-width: 0;
   }
 }
