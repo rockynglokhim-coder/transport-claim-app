@@ -4,6 +4,7 @@
   const $ = (id) => document.getElementById(id);
   let idToken = "";
   let profile = null;
+  let mtrFares = {};
 
   const LOCATIONS = {
     "香港島": {
@@ -22,7 +23,7 @@
     "新界": {
       "葵青區": ["荔景站","葵芳站","葵興站","青衣站"],
       "荃灣區": ["荃灣站","荃灣西站","大窩口站"],
-      "沙田區": ["大圍站","沙田站","火炭站","馬場站","大學站","車公廟站","沙田圍站","第一城站","石門站","大水坑站","恒安站","馬鞍山站","烏溪沙站","顯徑站"],
+      "沙田區": ["大圍站","沙田站","火炭站","馬場站","大學站","車公廟站","沙田圍站","第一城站","石門站","大水坑站","恆安站","馬鞍山站","烏溪沙站","顯徑站"],
       "大埔區": ["大埔墟站","太和站"],
       "北區": ["粉嶺站","上水站","羅湖站","落馬洲站"],
       "元朗區": ["元朗站","朗屏站","天水圍站","錦上路站"],
@@ -48,6 +49,7 @@
     const syncValue = () => {
       const place = station.value === "其他地點" ? other.value.trim() : station.value;
       value.value = region.value && district.value && place ? `${region.value}・${district.value}・${place}` : "";
+      updateAutoFare();
     };
     region.addEventListener("change", () => {
       setOptions(district, "請選擇地區", region.value ? Object.keys(LOCATIONS[region.value]) : []);
@@ -79,6 +81,52 @@
 
   setupLocationPicker("origin");
   setupLocationPicker("destination");
+
+  function selectedStation(prefix) {
+    const station = $(`${prefix}Station`).value;
+    return station && station !== "其他地點" ? station.replace(/站$/, "") : "";
+  }
+
+  function updateAutoFare() {
+    const amount = $("amount");
+    const status = $("fareStatus");
+    if ($("transport").value !== "MTR") {
+      if (amount.dataset.autofilled === "true") amount.value = "";
+      amount.readOnly = false;
+      amount.dataset.autofilled = "false";
+      status.textContent = "";
+      return;
+    }
+
+    const origin = selectedStation("origin");
+    const destination = selectedStation("destination");
+    const key = [origin, destination].sort().join("|");
+    const oneWayFare = mtrFares[key];
+    if (origin && destination && Number.isFinite(oneWayFare)) {
+      const multiplier = $("direction").value === "來回" ? 2 : 1;
+      const total = oneWayFare * multiplier;
+      amount.value = total.toFixed(2);
+      amount.readOnly = true;
+      amount.dataset.autofilled = "true";
+      status.textContent = `成人八達通${multiplier === 2 ? "來回" : "單程"}參考價：HK$${total.toFixed(2)}`;
+      return;
+    }
+
+    if (amount.dataset.autofilled === "true") amount.value = "";
+    amount.readOnly = false;
+    amount.dataset.autofilled = "false";
+    status.textContent = origin && destination ? "呢個站組合未有自動票價，請手動輸入金額。" : "選好起點站同終點站後，系統會自動填入港鐵車費。";
+  }
+
+  $("transport").addEventListener("change", updateAutoFare);
+  $("direction").addEventListener("change", updateAutoFare);
+  fetch("mtr-fares.json")
+    .then((response) => {
+      if (!response.ok) throw new Error("票價資料載入失敗");
+      return response.json();
+    })
+    .then((data) => { mtrFares = data.fares || {}; updateAutoFare(); })
+    .catch(() => { $("fareStatus").textContent = "暫時未能載入港鐵票價，請手動輸入金額。"; });
 
   const configured = Boolean(config.googleClientId && config.appsScriptUrl);
   $(configured ? "loginView" : "setupView").classList.remove("hidden");

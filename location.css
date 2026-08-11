@@ -27,6 +27,20 @@
   padding: 11px 8px;
 }
 
+.fare-status {
+  min-height: 1.3em;
+  margin: -4px 0 8px;
+  color: #52655f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+input[readonly] {
+  border-color: #9ab5aa;
+  background: #edf4f0;
+  font-weight: 800;
+}
+
 @media (max-width: 480px) {
   .location-grid {
     grid-template-columns: 1fr;

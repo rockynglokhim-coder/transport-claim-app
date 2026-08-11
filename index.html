@@ -66,8 +66,9 @@
         <label id="destinationOtherWrap" class="hidden">其他終點<input id="destinationOther" autocomplete="off"></label>
         <input id="destinationValue" name="destination" type="hidden">
       </fieldset>
-      <label>交通方式<select name="transport" required><option>MTR</option><option>巴士</option><option>的士</option><option>私家車</option><option>隧道</option><option>泊車</option><option>其他</option></select></label>
-      <div class="grid-2"><label>方向<select name="direction"><option>單程</option><option>來回</option></select></label><label>金額（HK$）<input name="amount" type="number" min="0" step="0.01" required></label></div>
+      <label>交通方式<select id="transport" name="transport" required><option>MTR</option><option>巴士</option><option>的士</option><option>私家車</option><option>隧道</option><option>泊車</option><option>其他</option></select></label>
+      <div class="grid-2"><label>方向<select id="direction" name="direction"><option>單程</option><option>來回</option></select></label><label>金額（HK$）<input id="amount" name="amount" type="number" min="0" step="0.01" required></label></div>
+      <p id="fareStatus" class="fare-status" aria-live="polite"></p>
       <label>Project / Site<input name="project" autocomplete="off"></label>
       <label>備註<textarea name="notes" rows="2"></textarea></label>
       <p id="formError" class="error" role="alert"></p>
