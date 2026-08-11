@@ -5,6 +5,7 @@
   let idToken = "";
   let profile = null;
   let mtrFares = {};
+  let currentClaims = [];
 
   const LOCATIONS = {
     "香港島": {
@@ -170,8 +171,10 @@
 
   async function loadClaims() {
     const data = await api("listClaims");
+    currentClaims = data.claims || [];
     $("monthTotal").textContent = `HK$${Number(data.monthTotal || 0).toLocaleString("en-HK", {minimumFractionDigits:2,maximumFractionDigits:2})}`;
-    $("claimList").innerHTML = data.claims.length ? data.claims.map(renderClaim).join("") : '<p class="muted">今個月未有車費紀錄。</p>';
+    $("claimList").innerHTML = currentClaims.length ? currentClaims.map(renderClaim).join("") : '<p class="muted">今個月未有車費紀錄。</p>';
+    $("printClaimButton").disabled = !currentClaims.length;
   }
 
   function renderClaim(c) {
@@ -179,9 +182,44 @@
     return `<article class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(c.origin)} → ${safe(c.destination)}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></article>`;
   }
 
+  function money(value) {
+    return `HK$${Number(value || 0).toLocaleString("en-HK", {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  }
+
+  function preparePrintReport() {
+    if (!profile || !currentClaims.length) return;
+    const text = (value) => String(value ?? "");
+    const monthDate = new Date(`${currentClaims[0].date}T00:00:00`);
+    $("printMonth").textContent = Number.isNaN(monthDate.getTime())
+      ? $("monthLabel").textContent
+      : new Intl.DateTimeFormat("zh-HK", {year:"numeric", month:"long"}).format(monthDate);
+    $("printEmployeeId").textContent = text(profile.employeeId);
+    $("printEmployeeName").textContent = text(profile.name);
+    $("printEmployeeEmail").textContent = text(profile.email);
+    $("printClaimRows").replaceChildren(...currentClaims.map((claim, index) => {
+      const row = document.createElement("tr");
+      [index + 1, claim.date, `${text(claim.origin)} → ${text(claim.destination)}`,
+        `${text(claim.transport)}／${text(claim.direction)}`,
+        [claim.project, claim.notes].filter(Boolean).join("／") || "—", money(claim.amount)
+      ].forEach((value) => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      return row;
+    }));
+    $("printTotal").textContent = money(currentClaims.reduce((sum, claim) => sum + Number(claim.amount || 0), 0));
+  }
+
   $("newClaimButton").addEventListener("click", () => { $("date").valueAsDate = new Date(); $("claimDialog").showModal(); });
   $("closeDialog").addEventListener("click", () => $("claimDialog").close());
   $("refreshButton").addEventListener("click", () => loadClaims().catch((e) => alert(e.message)));
+  $("printClaimButton").addEventListener("click", () => {
+    preparePrintReport();
+    document.title = `車費Claim-${$("printMonth").textContent}-${profile.employeeId}`;
+    window.print();
+  });
+  window.addEventListener("afterprint", () => { document.title = "車費 Claim"; });
   $("logoutButton").addEventListener("click", () => { google.accounts.id.disableAutoSelect(); location.reload(); });
   $("claimForm").addEventListener("submit", async (event) => {
     event.preventDefault();
