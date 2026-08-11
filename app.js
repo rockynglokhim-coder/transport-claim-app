@@ -120,7 +120,7 @@
 
   $("transport").addEventListener("change", updateAutoFare);
   $("direction").addEventListener("change", updateAutoFare);
-  fetch("mtr-fares.json")
+  fetch("mtr-fares.json?v=20260811-2")
     .then((response) => {
       if (!response.ok) throw new Error("票價資料載入失敗");
       return response.json();
