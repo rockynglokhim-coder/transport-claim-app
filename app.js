@@ -101,15 +101,29 @@
 
     const origin = selectedStation("origin");
     const destination = selectedStation("destination");
+    const connectedInterchanges = new Set(["中環|香港", "尖東|尖沙咀"]);
     const key = [origin, destination].sort().join("|");
+    if (origin && destination && (origin === destination || connectedInterchanges.has(key))) {
+      amount.value = "";
+      amount.readOnly = true;
+      amount.dataset.autofilled = "false";
+      status.textContent = origin === destination
+        ? "起點同終點唔可以係同一個港鐵站。"
+        : "呢兩個係相連轉乘站，請選擇實際入閘同出閘車站。";
+      return;
+    }
     const oneWayFare = mtrFares[key];
     if (origin && destination && Number.isFinite(oneWayFare)) {
-      const multiplier = $("direction").value === "來回" ? 2 : 1;
+      const airportExpress = [origin, destination].some((station) => station === "機場" || station === "博覽館");
+      const sameDayReturn = airportExpress && $("direction").value === "來回" && key !== "博覽館|機場";
+      const multiplier = $("direction").value === "來回" && !sameDayReturn ? 2 : 1;
       const total = oneWayFare * multiplier;
       amount.value = total.toFixed(2);
       amount.readOnly = true;
       amount.dataset.autofilled = "true";
-      status.textContent = `成人八達通${multiplier === 2 ? "來回" : "單程"}參考價：HK$${total.toFixed(2)}`;
+      const fareName = airportExpress ? "成人八達通機場快綫" : "成人八達通";
+      const journeyName = sameDayReturn ? "同日來回優惠" : (multiplier === 2 ? "來回" : "單程");
+      status.textContent = `${fareName}${journeyName}參考價：HK$${total.toFixed(2)}`;
       return;
     }
 
@@ -121,7 +135,7 @@
 
   $("transport").addEventListener("change", updateAutoFare);
   $("direction").addEventListener("change", updateAutoFare);
-  fetch("mtr-fares.json?v=20260811-2")
+  fetch("mtr-fares.json?v=20260812-3")
     .then((response) => {
       if (!response.ok) throw new Error("票價資料載入失敗");
       return response.json();
