@@ -154,8 +154,15 @@
   }
 
   function initGoogle() {
-    google.accounts.id.initialize({client_id: config.googleClientId, callback: onCredential, auto_select: true});
+    google.accounts.id.initialize({
+      client_id: config.googleClientId,
+      callback: onCredential,
+      auto_select: true,
+      itp_support: true,
+      use_fedcm_for_prompt: true
+    });
     google.accounts.id.renderButton($("googleButton"), {theme:"outline", size:"large", shape:"pill", text:"continue_with", width:280});
+    google.accounts.id.prompt();
   }
 
   async function onCredential(response) {
