@@ -310,8 +310,7 @@
     $("printClaimRows").replaceChildren(...currentClaims.map((claim, index) => {
       const row = document.createElement("tr");
       [index + 1, claim.date, `${displayPlace(claim.origin)} → ${displayPlace(claim.destination)}`,
-        `${text(claim.transport)}／${text(claim.direction)}`,
-        [claim.project, claim.notes].filter(Boolean).join("／") || "—", money(claim.amount)
+        `${text(claim.transport)}／${text(claim.direction)}`, money(claim.amount)
       ].forEach((value) => {
         const cell = document.createElement("td");
         cell.textContent = value;

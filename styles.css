@@ -33,4 +33,6 @@
 .claim-row{position:relative;overflow:hidden;border-radius:17px;background:#d9e2dd;touch-action:pan-y}.claim-row .claim{position:relative;z-index:2;transition:transform .22s ease}.claim-row.swipe-open .claim{transform:translateX(-132px)}.claim-actions{position:absolute;z-index:1;top:0;right:0;bottom:0;display:grid;grid-template-columns:66px 66px}.claim-actions button{border:0;color:#fff;font-weight:800}.edit-claim{background:#59756c}.delete-claim{background:#b9433f}.claim-actions button:disabled{opacity:.55}
 @media print{
   .print-report{font-family:"Noto Sans TC","PingFang TC","PingFang HK","Microsoft JhengHei",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-report th,.print-report td{padding:6px 5px;white-space:nowrap;word-break:normal}
+  .print-report th:nth-child(1){width:6%}.print-report th:nth-child(2){width:19%}.print-report th:nth-child(3){width:39%}.print-report th:nth-child(4){width:21%}.print-report th:nth-child(5){width:15%}
 }
