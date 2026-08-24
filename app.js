@@ -5,6 +5,7 @@
   let idToken = "";
   let sessionToken = localStorage.getItem("transportClaimSession") || "";
   let profile = null;
+  let editingClaimId = "";
   let mtrFares = {};
   let currentClaims = [];
 
@@ -285,7 +286,7 @@
 
   function renderClaim(c) {
     const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (m) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-    return `<article class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(displayPlace(c.origin))} → ${safe(displayPlace(c.destination))}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></article>`;
+    return `<article class="claim-row" data-claim-id="${safe(c.id)}"><div class="claim-actions"><button class="edit-claim" type="button">修改</button><button class="delete-claim" type="button">刪除</button></div><div class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(displayPlace(c.origin))} → ${safe(displayPlace(c.destination))}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></div></article>`;
   }
 
   function displayPlace(value) {
@@ -320,7 +321,49 @@
     $("printTotal").textContent = money(currentClaims.reduce((sum, claim) => sum + Number(claim.amount || 0), 0));
   }
 
-  $("newClaimButton").addEventListener("click", () => { $("date").valueAsDate = new Date(); $("claimDialog").showModal(); });
+  function resetClaimForm() {
+    editingClaimId = "";
+    $("claimForm").reset();
+    ["originRegion", "destinationRegion"].forEach((id) => $(id).dispatchEvent(new Event("change")));
+    $("date").valueAsDate = new Date();
+    $("claimDialogTitle").textContent = "新增車費";
+    $("saveButton").textContent = "儲存車費";
+    $("formError").textContent = "";
+  }
+
+  function populateLocation(prefix, value) {
+    if (applyStation(prefix, displayPlace(value))) return;
+    const parts = String(value || "").split("・");
+    const [regionName, districtName, placeName] = parts;
+    if (!LOCATIONS[regionName]?.[districtName] || !placeName) return;
+    $(`${prefix}Region`).value = regionName;
+    $(`${prefix}Region`).dispatchEvent(new Event("change"));
+    $(`${prefix}District`).value = districtName;
+    $(`${prefix}District`).dispatchEvent(new Event("change"));
+    $(`${prefix}Station`).value = "其他地點";
+    $(`${prefix}Station`).dispatchEvent(new Event("change"));
+    $(`${prefix}Other`).value = placeName;
+    $(`${prefix}Other`).dispatchEvent(new Event("input"));
+  }
+
+  function editClaim(claim) {
+    resetClaimForm();
+    editingClaimId = claim.id;
+    $("claimDialogTitle").textContent = "修改車費";
+    $("saveButton").textContent = "儲存修改";
+    $("date").value = claim.date;
+    populateLocation("origin", claim.origin);
+    populateLocation("destination", claim.destination);
+    $("transport").value = claim.transport;
+    $("direction").value = claim.direction;
+    $("amount").readOnly = false;
+    $("amount").value = Number(claim.amount).toFixed(2);
+    $("claimForm").elements.project.value = claim.project || "";
+    $("claimForm").elements.notes.value = claim.notes || "";
+    $("claimDialog").showModal();
+  }
+
+  $("newClaimButton").addEventListener("click", () => { resetClaimForm(); $("claimDialog").showModal(); });
   $("closeDialog").addEventListener("click", () => $("claimDialog").close());
   $("refreshButton").addEventListener("click", async (event) => {
     const button = event.currentTarget;
@@ -329,6 +372,29 @@
     try { await loadClaims(); }
     catch (error) { alert(error.message); }
     finally { button.disabled = false; button.textContent = "↻ 即時更新"; }
+  });
+  let swipeStartX = 0;
+  $("claimList").addEventListener("touchstart", (event) => { swipeStartX = event.touches[0].clientX; }, {passive:true});
+  $("claimList").addEventListener("touchend", (event) => {
+    const row = event.target.closest(".claim-row");
+    if (!row) return;
+    const distance = event.changedTouches[0].clientX - swipeStartX;
+    $("claimList").querySelectorAll(".claim-row.swipe-open").forEach((item) => { if (item !== row) item.classList.remove("swipe-open"); });
+    if (distance < -40) row.classList.add("swipe-open");
+    if (distance > 40) row.classList.remove("swipe-open");
+  }, {passive:true});
+  $("claimList").addEventListener("click", async (event) => {
+    const row = event.target.closest(".claim-row");
+    if (!row) return;
+    const claim = currentClaims.find((item) => item.id === row.dataset.claimId);
+    if (!claim) return;
+    if (event.target.closest(".edit-claim")) editClaim(claim);
+    if (event.target.closest(".delete-claim")) {
+      if (!confirm(`確定刪除 ${displayPlace(claim.origin)} → ${displayPlace(claim.destination)}？`)) return;
+      event.target.disabled = true;
+      try { await api("deleteClaim", {id:claim.id}); await loadClaims(); }
+      catch (error) { alert(error.message); event.target.disabled = false; }
+    }
   });
   $("printClaimButton").addEventListener("click", async () => {
     preparePrintReport();
@@ -350,10 +416,11 @@
     try {
       const values = Object.fromEntries(new FormData(form));
       if (!values.origin || !values.destination) throw new Error("請完成選擇起點及終點。");
-      await api("createClaim", values);
+      if (editingClaimId) await api("updateClaim", {...values, id:editingClaimId});
+      else await api("createClaim", values);
       form.reset();
       ["originRegion", "destinationRegion"].forEach((id) => $(id).dispatchEvent(new Event("change")));
-      $("claimDialog").close(); await loadClaims();
+      editingClaimId = ""; $("claimDialog").close(); await loadClaims();
     } catch (error) { $("formError").textContent = error.message; }
     finally { button.disabled = false; }
   });

@@ -30,6 +30,7 @@
 :root{font-family:"Noto Sans TC",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-synthesis:auto}
 .claim-main{min-width:0}.claim-main strong{line-height:1.35;overflow-wrap:anywhere}.claim-amount{display:grid;gap:3px;justify-items:end}.claim-amount span{margin-top:0}
 .quick-trip{margin:16px 0;padding:14px;border:1px solid #dce5e0;border-radius:16px;background:#f3f7f4}.quick-trip>label{margin:0;color:#18312b}.quick-trip>p{margin:5px 0 10px;color:#6e7c78;font-size:12px;line-height:1.45}.quick-trip>div{display:grid;grid-template-columns:1fr auto;gap:8px}.quick-trip input{min-width:0;background:#fff}.quick-trip button{padding:0 15px;border:0;border-radius:12px;background:#153b32;color:#fff;font-weight:800}.quick-trip .quick-trip-status{min-height:1.3em;margin:8px 0 0;color:#376358;font-weight:700}
+.claim-row{position:relative;overflow:hidden;border-radius:17px;background:#d9e2dd;touch-action:pan-y}.claim-row .claim{position:relative;z-index:2;transition:transform .22s ease}.claim-row.swipe-open .claim{transform:translateX(-132px)}.claim-actions{position:absolute;z-index:1;top:0;right:0;bottom:0;display:grid;grid-template-columns:66px 66px}.claim-actions button{border:0;color:#fff;font-weight:800}.edit-claim{background:#59756c}.delete-claim{background:#b9433f}.claim-actions button:disabled{opacity:.55}
 @media print{
   .print-report{font-family:"Noto Sans TC","PingFang TC","PingFang HK","Microsoft JhengHei",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
