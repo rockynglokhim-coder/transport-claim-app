@@ -38,3 +38,4 @@
   .print-report th,.print-report td{padding:6px 5px;white-space:nowrap;word-break:normal}
   .print-report th:nth-child(1){width:6%}.print-report th:nth-child(2){width:19%}.print-report th:nth-child(3){width:39%}.print-report th:nth-child(4){width:21%}.print-report th:nth-child(5){width:15%}
 }
+.transfer-row{grid-template-columns:minmax(0,1fr) 104px 38px}.transfer-row input{min-width:0;padding:11px 8px}.transfer-amount{font-variant-numeric:tabular-nums}
