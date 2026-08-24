@@ -14,6 +14,8 @@ function doPost(e) {
     if (action === 'session') return json_({ok: true, user, sessionToken: createSessionToken_(user.email)});
     if (action === 'listClaims') return json_(listClaims_(user));
     if (action === 'createClaim') return json_(createClaim_(user, payload));
+    if (action === 'updateClaim') return json_(updateClaim_(user, payload));
+    if (action === 'deleteClaim') return json_(deleteClaim_(user, payload));
     throw new Error('不支援的操作。');
   } catch (error) {
     return json_({ok: false, error: error.message});
@@ -88,6 +90,41 @@ function createClaim_(user, p) {
     sheet.appendRow([claimId,user.employeeId,new Date(p.date + 'T00:00:00'),clean_(p.origin),clean_(p.destination),clean_(p.transport),clean_(p.direction),amount,clean_(p.project),clean_(p.notes),new Date(),'Draft']);
     return {ok:true, claimId};
   } finally { lock.releaseLock(); }
+}
+
+function updateClaim_(user, p) {
+  validateClaim_(p);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims');
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const row = findClaimRow_(sheet, user, p.id);
+    sheet.getRange(row, 3, 1, 8).setValues([[new Date(p.date + 'T00:00:00'), clean_(p.origin), clean_(p.destination), clean_(p.transport), clean_(p.direction), Number(p.amount), clean_(p.project), clean_(p.notes)]]);
+    return {ok:true, claimId:p.id};
+  } finally { lock.releaseLock(); }
+}
+
+function deleteClaim_(user, p) {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims');
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const row = findClaimRow_(sheet, user, p.id);
+    sheet.deleteRow(row);
+    return {ok:true, claimId:p.id};
+  } finally { lock.releaseLock(); }
+}
+
+function validateClaim_(p) {
+  ['date','origin','destination','transport','direction','amount'].forEach((key) => { if (!String(p[key] || '').trim()) throw new Error('請填妥所有必填欄位。'); });
+  const amount = Number(p.amount); if (!Number.isFinite(amount) || amount < 0) throw new Error('金額不正確。');
+}
+
+function findClaimRow_(sheet, user, claimId) {
+  const id = String(claimId || '').trim();
+  if (!id) throw new Error('車費紀錄編號不正確。');
+  const values = sheet.getDataRange().getDisplayValues();
+  const index = values.slice(1).findIndex((row) => row[0] === id && row[1] === user.employeeId);
+  if (index < 0) throw new Error('搵唔到呢筆車費紀錄。');
+  return index + 2;
 }
 
 function validDate_(value, now) { const d = new Date(value); return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }
