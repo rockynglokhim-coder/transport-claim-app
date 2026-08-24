@@ -10,6 +10,7 @@ function doPost(e) {
   try {
     const action = String(e.parameter.action || '');
     const user = verifyUser_(e.parameter.idToken, e.parameter.sessionToken);
+    ensureTransferColumn_();
     const payload = JSON.parse(e.parameter.payload || '{}');
     if (action === 'session') return json_({ok: true, user, sessionToken: createSessionToken_(user.email)});
     if (action === 'listClaims') return json_(listClaims_(user));
@@ -75,7 +76,7 @@ function safeEqual_(left, right) {
 function listClaims_(user) {
   const rows = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims').getDataRange().getValues();
   const now = new Date();
-  const claims = rows.slice(1).filter((r) => r[1] === user.employeeId && validDate_(r[2], now)).map((r) => ({id:r[0],date:formatDate_(r[2]),origin:r[3],destination:r[4],transport:r[5],direction:r[6],amount:Number(r[7]) || 0,project:r[8],notes:r[9],status:r[11]})).reverse();
+  const claims = rows.slice(1).filter((r) => r[1] === user.employeeId && validDate_(r[2], now)).map((r) => ({id:r[0],date:formatDate_(r[2]),origin:r[3],destination:r[4],transport:r[5],direction:r[6],amount:Number(r[7]) || 0,project:r[8],notes:r[9],status:r[11],transfers:parseTransfers_(r[12])})).reverse();
   return {ok:true, claims, monthTotal:claims.reduce((sum,c) => sum + c.amount, 0)};
 }
 
@@ -87,7 +88,7 @@ function createClaim_(user, p) {
   try {
     const next = Math.max(1, sheet.getLastRow());
     const claimId = 'C' + String(next).padStart(5, '0');
-    sheet.appendRow([claimId,user.employeeId,new Date(p.date + 'T00:00:00'),clean_(p.origin),clean_(p.destination),clean_(p.transport),clean_(p.direction),amount,clean_(p.project),clean_(p.notes),new Date(),'Draft']);
+    sheet.appendRow([claimId,user.employeeId,new Date(p.date + 'T00:00:00'),clean_(p.origin),clean_(p.destination),clean_(p.transport),clean_(p.direction),amount,clean_(p.project),clean_(p.notes),new Date(),'Draft',serializeTransfers_(p.transfers)]);
     return {ok:true, claimId};
   } finally { lock.releaseLock(); }
 }
@@ -99,6 +100,7 @@ function updateClaim_(user, p) {
   try {
     const row = findClaimRow_(sheet, user, p.id);
     sheet.getRange(row, 3, 1, 8).setValues([[new Date(p.date + 'T00:00:00'), clean_(p.origin), clean_(p.destination), clean_(p.transport), clean_(p.direction), Number(p.amount), clean_(p.project), clean_(p.notes)]]);
+    sheet.getRange(row, 13).setValue(serializeTransfers_(p.transfers));
     return {ok:true, claimId:p.id};
   } finally { lock.releaseLock(); }
 }
@@ -125,6 +127,23 @@ function findClaimRow_(sheet, user, claimId) {
   const index = values.slice(1).findIndex((row) => row[0] === id && row[1] === user.employeeId);
   if (index < 0) throw new Error('搵唔到呢筆車費紀錄。');
   return index + 2;
+}
+
+function ensureTransferColumn_() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims');
+  if (!sheet.getRange(1, 13).getValue()) sheet.getRange(1, 13).setValue('中途轉乘');
+}
+
+function serializeTransfers_(value) {
+  const list = Array.isArray(value) ? value : [];
+  return JSON.stringify(list.map(clean_).filter(Boolean).slice(0, 6));
+}
+
+function parseTransfers_(value) {
+  try {
+    const list = JSON.parse(String(value || '[]'));
+    return Array.isArray(list) ? list.map(clean_).filter(Boolean).slice(0, 6) : [];
+  } catch (error) { return []; }
 }
 
 function validDate_(value, now) { const d = new Date(value); return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }
