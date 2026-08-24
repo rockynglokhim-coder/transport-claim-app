@@ -84,6 +84,61 @@
   setupLocationPicker("origin");
   setupLocationPicker("destination");
 
+  function spokenPlace(value) {
+    return String(value || "")
+      .replace(/^[\s，,。]*(?:係|是)?\s*/, "")
+      .replace(/[\s，,。！？!?]+$/g, "")
+      .replace(/(?:港鐵站|地鐵站|港鐵|地鐵|站)$/g, "")
+      .trim();
+  }
+
+  function findStation(value) {
+    const wanted = spokenPlace(value);
+    for (const [region, districts] of Object.entries(LOCATIONS)) {
+      for (const [district, stations] of Object.entries(districts)) {
+        const station = stations.find((name) => spokenPlace(name) === wanted);
+        if (station) return {region, district, station};
+      }
+    }
+    return null;
+  }
+
+  function applyStation(prefix, place) {
+    const match = findStation(place);
+    if (!match) return false;
+    $(`${prefix}Region`).value = match.region;
+    $(`${prefix}Region`).dispatchEvent(new Event("change"));
+    $(`${prefix}District`).value = match.district;
+    $(`${prefix}District`).dispatchEvent(new Event("change"));
+    $(`${prefix}Station`).value = match.station;
+    $(`${prefix}Station`).dispatchEvent(new Event("change"));
+    return true;
+  }
+
+  function applyQuickTrip() {
+    const text = $("quickTripInput").value.trim();
+    const status = $("quickTripStatus");
+    const origin = text.match(/(?:出發點|起點)\s*[:：]?\s*(.+?)(?=\s*(?:目的地|到達點|終點)\s*[:：]?)/)?.[1];
+    const destination = text.match(/(?:目的地|到達點|終點)\s*[:：]?\s*(.+)$/)?.[1];
+    if (!origin || !destination) {
+      status.textContent = "請講：出發點荔枝角，目的地中環";
+      return;
+    }
+    const originFound = applyStation("origin", origin);
+    const destinationFound = applyStation("destination", destination);
+    if (!originFound || !destinationFound) {
+      const missing = [!originFound && spokenPlace(origin), !destinationFound && spokenPlace(destination)].filter(Boolean).join("、");
+      status.textContent = `暫時搵唔到：${missing}`;
+      return;
+    }
+    status.textContent = `已套用：${selectedStation("origin")} → ${selectedStation("destination")}`;
+  }
+
+  $("applyQuickTrip").addEventListener("click", applyQuickTrip);
+  $("quickTripInput").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); applyQuickTrip(); }
+  });
+
   function selectedStation(prefix) {
     const station = $(`${prefix}Station`).value;
     return station && station !== "其他地點" ? station.replace(/站$/, "") : "";
