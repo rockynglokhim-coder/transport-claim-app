@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260824-8">
+  <link rel="stylesheet" href="styles.css?v=20260824-9">
   <link rel="stylesheet" href="location.css?v=20260812-4">
 </head>
 <body>
@@ -102,7 +102,7 @@
         <div id="transferList"></div>
       </section>
       <label>交通方式<select id="transport" name="transport" required><option>MTR</option><option>巴士</option><option>的士</option><option>私家車</option><option>隧道</option><option>泊車</option><option>其他</option></select></label>
-      <div class="grid-2"><label>方向<select id="direction" name="direction"><option>單程</option><option>來回</option></select></label><label>金額（HK$）<input id="amount" name="amount" type="number" min="0" step="0.01" required></label></div>
+      <div class="grid-2"><label>方向<select id="direction" name="direction"><option>單程</option><option>來回</option></select></label><label>主要行程金額（HK$）<input id="amount" name="amount" type="number" min="0" step="0.01" required></label></div>
       <p id="fareStatus" class="fare-status" aria-live="polite"></p>
       <label>Project / Site<input name="project" autocomplete="off"></label>
       <label>備註<textarea name="notes" rows="2"></textarea></label>
@@ -112,6 +112,6 @@
   </dialog>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="config.js?v=20260812-3"></script>
-  <script src="app.js?v=20260824-8"></script>
+  <script src="app.js?v=20260824-9"></script>
 </body>
 </html>
