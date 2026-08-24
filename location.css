@@ -43,10 +43,15 @@ input[readonly] {
 
 @media (max-width: 600px) {
   .location-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 6px;
   }
 
   .location-grid select {
     min-width: 0;
+    padding: 10px 4px;
+    font-size: 11px;
   }
+
+  .location-grid label {font-size: 11px}
 }
