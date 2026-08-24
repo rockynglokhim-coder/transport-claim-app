@@ -322,7 +322,14 @@
 
   $("newClaimButton").addEventListener("click", () => { $("date").valueAsDate = new Date(); $("claimDialog").showModal(); });
   $("closeDialog").addEventListener("click", () => $("claimDialog").close());
-  $("refreshButton").addEventListener("click", () => loadClaims().catch((e) => alert(e.message)));
+  $("refreshButton").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "更新中…";
+    try { await loadClaims(); }
+    catch (error) { alert(error.message); }
+    finally { button.disabled = false; button.textContent = "↻ 即時更新"; }
+  });
   $("printClaimButton").addEventListener("click", async () => {
     preparePrintReport();
     document.title = `車費Claim-${$("printMonth").textContent}-${profile.name}`;
