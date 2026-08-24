@@ -17,7 +17,8 @@
     "九龍": {
       "油尖旺區": ["尖沙咀站","尖東站","佐敦站","油麻地站","旺角站","旺角東站","太子站","柯士甸站","九龍站","奧運站"],
       "深水埗區": ["深水埗站","長沙灣站","荔枝角站","美孚站","南昌站","石硤尾站"],
-      "九龍城區": ["九龍塘站","樂富站","啟德站","宋皇臺站","土瓜灣站","何文田站","紅磡站","黃埔站"],
+      "九龍城區": ["九龍塘站","樂富站","啟德站","宋皇臺站","土瓜灣站"],
+      "黃埔區": ["黃埔站","紅磡站","何文田站"],
       "黃大仙區": ["黃大仙站","鑽石山站","彩虹站"],
       "觀塘區": ["九龍灣站","牛頭角站","觀塘站","藍田站","油塘站"]
     },
@@ -200,7 +201,12 @@
 
   function renderClaim(c) {
     const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (m) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-    return `<article class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(c.origin)} → ${safe(c.destination)}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></article>`;
+    return `<article class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(displayPlace(c.origin))} → ${safe(displayPlace(c.destination))}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></article>`;
+  }
+
+  function displayPlace(value) {
+    const parts = String(value ?? "").split("・").map((part) => part.trim()).filter(Boolean);
+    return parts[parts.length - 1] || "—";
   }
 
   function money(value) {
@@ -217,7 +223,7 @@
     $("printEmployeeName").textContent = text(profile.name);
     $("printClaimRows").replaceChildren(...currentClaims.map((claim, index) => {
       const row = document.createElement("tr");
-      [index + 1, claim.date, `${text(claim.origin)} → ${text(claim.destination)}`,
+      [index + 1, claim.date, `${displayPlace(claim.origin)} → ${displayPlace(claim.destination)}`,
         `${text(claim.transport)}／${text(claim.direction)}`,
         [claim.project, claim.notes].filter(Boolean).join("／") || "—", money(claim.amount)
       ].forEach((value) => {
@@ -233,9 +239,10 @@
   $("newClaimButton").addEventListener("click", () => { $("date").valueAsDate = new Date(); $("claimDialog").showModal(); });
   $("closeDialog").addEventListener("click", () => $("claimDialog").close());
   $("refreshButton").addEventListener("click", () => loadClaims().catch((e) => alert(e.message)));
-  $("printClaimButton").addEventListener("click", () => {
+  $("printClaimButton").addEventListener("click", async () => {
     preparePrintReport();
     document.title = `車費Claim-${$("printMonth").textContent}-${profile.name}`;
+    if (document.fonts?.ready) await document.fonts.ready;
     window.print();
   });
   window.addEventListener("afterprint", () => { document.title = "車費 Claim"; });
