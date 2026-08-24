@@ -120,10 +120,11 @@
   function applyQuickTrip() {
     const text = $("quickTripInput").value.trim();
     const status = $("quickTripStatus");
-    const origin = text.match(/(?:出發點|起點)\s*[:：]?\s*(.+?)(?=\s*(?:目的地|到達點|終點)\s*[:：]?)/)?.[1];
-    const destination = text.match(/(?:目的地|到達點|終點)\s*[:：]?\s*(.+)$/)?.[1];
+    const naturalTrip = text.match(/^\s*由\s*(.+?)\s*去\s*(.+?)\s*[，,。]?\s*$/);
+    const origin = naturalTrip?.[1] || text.match(/(?:出發點|起點)\s*[:：]?\s*(.+?)(?=\s*(?:目的地|到達點|終點)\s*[:：]?)/)?.[1];
+    const destination = naturalTrip?.[2] || text.match(/(?:目的地|到達點|終點)\s*[:：]?\s*(.+)$/)?.[1];
     if (!origin || !destination) {
-      status.textContent = "請講：出發點荔枝角，目的地中環";
+      status.textContent = "請講：由荔枝角去中環";
       return;
     }
     const originFound = applyStation("origin", origin);
