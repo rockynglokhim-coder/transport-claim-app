@@ -76,7 +76,12 @@ function safeEqual_(left, right) {
 function listClaims_(user) {
   const rows = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims').getDataRange().getValues();
   const now = new Date();
-  const claims = rows.slice(1).filter((r) => r[1] === user.employeeId && validDate_(r[2], now)).map((r) => ({id:r[0],date:formatDate_(r[2]),origin:r[3],destination:r[4],transport:r[5],direction:r[6],amount:Number(r[7]) || 0,project:r[8],notes:r[9],status:r[11],transfers:parseTransfers_(r[12])})).reverse();
+  const claims = rows.slice(1).filter((r) => r[1] === user.employeeId && validDate_(r[2], now)).map((r) => {
+    const transfers = parseTransfers_(r[12]);
+    const amount = Number(r[7]) || 0;
+    const baseAmount = r[13] === '' ? Math.max(0, amount - transferTotal_(transfers)) : Number(r[13]) || 0;
+    return {id:r[0],date:formatDate_(r[2]),origin:r[3],destination:r[4],transport:r[5],direction:r[6],amount,baseAmount,project:r[8],notes:r[9],status:r[11],transfers};
+  }).reverse();
   return {ok:true, claims, monthTotal:claims.reduce((sum,c) => sum + c.amount, 0)};
 }
 
@@ -88,19 +93,24 @@ function createClaim_(user, p) {
   try {
     const next = Math.max(1, sheet.getLastRow());
     const claimId = 'C' + String(next).padStart(5, '0');
-    sheet.appendRow([claimId,user.employeeId,new Date(p.date + 'T00:00:00'),clean_(p.origin),clean_(p.destination),clean_(p.transport),clean_(p.direction),amount,clean_(p.project),clean_(p.notes),new Date(),'Draft',serializeTransfers_(p.transfers)]);
+    const transfers = normalizeTransfers_(p.transfers);
+    const total = amount + transferTotal_(transfers);
+    sheet.appendRow([claimId,user.employeeId,new Date(p.date + 'T00:00:00'),clean_(p.origin),clean_(p.destination),clean_(p.transport),clean_(p.direction),total,clean_(p.project),clean_(p.notes),new Date(),'Draft',JSON.stringify(transfers),amount]);
     return {ok:true, claimId};
   } finally { lock.releaseLock(); }
 }
 
 function updateClaim_(user, p) {
   validateClaim_(p);
+  const transfers = normalizeTransfers_(p.transfers);
+  const baseAmount = Number(p.amount);
+  const total = baseAmount + transferTotal_(transfers);
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const row = findClaimRow_(sheet, user, p.id);
-    sheet.getRange(row, 3, 1, 8).setValues([[new Date(p.date + 'T00:00:00'), clean_(p.origin), clean_(p.destination), clean_(p.transport), clean_(p.direction), Number(p.amount), clean_(p.project), clean_(p.notes)]]);
-    sheet.getRange(row, 13).setValue(serializeTransfers_(p.transfers));
+    sheet.getRange(row, 3, 1, 8).setValues([[new Date(p.date + 'T00:00:00'), clean_(p.origin), clean_(p.destination), clean_(p.transport), clean_(p.direction), total, clean_(p.project), clean_(p.notes)]]);
+    sheet.getRange(row, 13, 1, 2).setValues([[JSON.stringify(transfers), baseAmount]]);
     return {ok:true, claimId:p.id};
   } finally { lock.releaseLock(); }
 }
@@ -132,18 +142,27 @@ function findClaimRow_(sheet, user, claimId) {
 function ensureTransferColumn_() {
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('Claims');
   if (!sheet.getRange(1, 13).getValue()) sheet.getRange(1, 13).setValue('中途轉乘');
+  if (!sheet.getRange(1, 14).getValue()) sheet.getRange(1, 14).setValue('主要行程金額');
 }
 
-function serializeTransfers_(value) {
+function normalizeTransfers_(value) {
   const list = Array.isArray(value) ? value : [];
-  return JSON.stringify(list.map(clean_).filter(Boolean).slice(0, 6));
+  return list.map((item) => {
+    if (typeof item === 'string') return {label:clean_(item), amount:0};
+    const amount = Number(item && item.amount);
+    return {label:clean_(item && item.label), amount:Number.isFinite(amount) && amount >= 0 ? amount : 0};
+  }).filter((item) => item.label).slice(0, 6);
 }
 
 function parseTransfers_(value) {
   try {
     const list = JSON.parse(String(value || '[]'));
-    return Array.isArray(list) ? list.map(clean_).filter(Boolean).slice(0, 6) : [];
+    return normalizeTransfers_(list);
   } catch (error) { return []; }
+}
+
+function transferTotal_(transfers) {
+  return transfers.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 }
 
 function validDate_(value, now) { const d = new Date(value); return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }

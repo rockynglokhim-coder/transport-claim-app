@@ -291,7 +291,11 @@
   }
 
   function routeText(claim) {
-    return [displayPlace(claim.origin), ...(claim.transfers || []), displayPlace(claim.destination)].join(" → ");
+    const transfers = (claim.transfers || []).map((item) => {
+      const transfer = typeof item === "string" ? {label:item, amount:0} : item;
+      return `${transfer.label}${Number(transfer.amount) > 0 ? `（HK$${Number(transfer.amount).toFixed(2)}）` : ""}`;
+    });
+    return [displayPlace(claim.origin), ...transfers, displayPlace(claim.destination)].join(" → ");
   }
 
   function displayPlace(value) {
@@ -338,20 +342,28 @@
 
   function addTransfer(value = "") {
     if ($("transferList").children.length >= 6) return;
+    const transfer = typeof value === "string" ? {label:value, amount:""} : value;
     const row = document.createElement("div");
     row.className = "transfer-row";
     const input = document.createElement("input");
-    input.className = "transfer-input";
+    input.className = "transfer-input transfer-label";
     input.type = "text";
     input.placeholder = "例如：中環轉船";
     input.autocomplete = "off";
-    input.value = value;
+    input.value = transfer.label || "";
+    const amount = document.createElement("input");
+    amount.className = "transfer-amount";
+    amount.type = "number";
+    amount.min = "0";
+    amount.step = "0.01";
+    amount.placeholder = "HK$";
+    amount.value = Number(transfer.amount) > 0 ? Number(transfer.amount).toFixed(2) : "";
     const remove = document.createElement("button");
     remove.type = "button";
     remove.setAttribute("aria-label", "移除中途轉乘");
     remove.textContent = "×";
     remove.addEventListener("click", () => row.remove());
-    row.append(input, remove);
+    row.append(input, amount, remove);
     $("transferList").appendChild(row);
     input.focus();
   }
@@ -384,7 +396,7 @@
     $("transport").value = claim.transport;
     $("direction").value = claim.direction;
     $("amount").readOnly = false;
-    $("amount").value = Number(claim.amount).toFixed(2);
+    $("amount").value = Number(claim.baseAmount ?? claim.amount).toFixed(2);
     $("claimForm").elements.project.value = claim.project || "";
     $("claimForm").elements.notes.value = claim.notes || "";
     (claim.transfers || []).forEach(addTransfer);
@@ -443,7 +455,10 @@
     const button = $("saveButton"); button.disabled = true; $("formError").textContent = "";
     try {
       const values = Object.fromEntries(new FormData(form));
-      values.transfers = [...form.querySelectorAll(".transfer-input")].map((input) => input.value.trim()).filter(Boolean);
+      values.transfers = [...form.querySelectorAll(".transfer-row")].map((row) => ({
+        label: row.querySelector(".transfer-label").value.trim(),
+        amount: Number(row.querySelector(".transfer-amount").value || 0)
+      })).filter((item) => item.label);
       if (!values.origin || !values.destination) throw new Error("請完成選擇起點及終點。");
       if (editingClaimId) await api("updateClaim", {...values, id:editingClaimId});
       else await api("createClaim", values);
