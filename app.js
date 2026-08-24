@@ -3,6 +3,7 @@
   const config = window.TRANSPORT_CLAIM_CONFIG || {};
   const $ = (id) => document.getElementById(id);
   let idToken = "";
+  let sessionToken = localStorage.getItem("transportClaimSession") || "";
   let profile = null;
   let mtrFares = {};
   let currentClaims = [];
@@ -226,12 +227,9 @@
     $("loginError").textContent = "正在驗證身份…";
     try {
       const data = await api("session");
-      profile = data.user;
-      $("loginView").classList.add("hidden");
-      $("appView").classList.remove("hidden");
-      $("welcome").textContent = `你好，${profile.name}`;
-      $("monthLabel").textContent = new Intl.DateTimeFormat("zh-HK", {year:"numeric",month:"long"}).format(new Date());
-      await loadClaims();
+      saveSession(data.sessionToken);
+      idToken = "";
+      await enterApp(data.user);
     } catch (error) {
       idToken = "";
       $("loginError").textContent = error.message;
@@ -239,11 +237,42 @@
   }
 
   async function api(action, payload = {}) {
-    const body = new URLSearchParams({action, idToken, payload: JSON.stringify(payload)});
+    const body = new URLSearchParams({action, idToken, sessionToken, payload: JSON.stringify(payload)});
     const response = await fetch(config.appsScriptUrl, {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"}, body});
     const data = await response.json();
     if (!data.ok) throw new Error(data.error || "操作未完成，請稍後再試。");
     return data;
+  }
+
+  function saveSession(token) {
+    if (!token) return;
+    sessionToken = token;
+    localStorage.setItem("transportClaimSession", token);
+  }
+
+  async function enterApp(user) {
+    profile = user;
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    $("welcome").textContent = `你好，${profile.name}`;
+    $("monthLabel").textContent = new Intl.DateTimeFormat("zh-HK", {year:"numeric",month:"long"}).format(new Date());
+    await loadClaims();
+  }
+
+  async function restoreSession() {
+    if (!sessionToken) return false;
+    $("loginError").textContent = "正在恢復登入…";
+    try {
+      const data = await api("session");
+      saveSession(data.sessionToken);
+      await enterApp(data.user);
+      return true;
+    } catch (error) {
+      sessionToken = "";
+      localStorage.removeItem("transportClaimSession");
+      $("loginError").textContent = "";
+      return false;
+    }
   }
 
   async function loadClaims() {
@@ -301,7 +330,12 @@
     window.print();
   });
   window.addEventListener("afterprint", () => { document.title = "車費 Claim"; });
-  $("logoutButton").addEventListener("click", () => { google.accounts.id.disableAutoSelect(); location.reload(); });
+  $("logoutButton").addEventListener("click", () => {
+    sessionToken = "";
+    localStorage.removeItem("transportClaimSession");
+    google.accounts.id.disableAutoSelect();
+    location.reload();
+  });
   $("claimForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -316,5 +350,5 @@
     } catch (error) { $("formError").textContent = error.message; }
     finally { button.disabled = false; }
   });
-  waitForGoogle();
+  restoreSession().then((restored) => { if (!restored) waitForGoogle(); });
 })();
