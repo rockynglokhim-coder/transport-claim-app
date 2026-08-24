@@ -287,7 +287,11 @@
 
   function renderClaim(c) {
     const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (m) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-    return `<article class="claim-row" data-claim-id="${safe(c.id)}"><div class="claim-actions"><button class="edit-claim" type="button">修改</button><button class="delete-claim" type="button">刪除</button></div><div class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(displayPlace(c.origin))} → ${safe(displayPlace(c.destination))}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></div></article>`;
+    return `<article class="claim-row" data-claim-id="${safe(c.id)}"><div class="claim-actions"><button class="edit-claim" type="button">修改</button><button class="delete-claim" type="button">刪除</button></div><div class="claim"><div class="claim-icon">${c.transport === "MTR" ? "🚇" : "🚕"}</div><div class="claim-main"><strong>${safe(routeText(c))}</strong><span>${safe(c.date)} · ${safe(c.transport)} · ${safe(c.direction)}</span></div><div class="claim-amount"><strong>HK$${Number(c.amount).toFixed(2)}</strong><span>${safe(c.status)}</span></div></div></article>`;
+  }
+
+  function routeText(claim) {
+    return [displayPlace(claim.origin), ...(claim.transfers || []), displayPlace(claim.destination)].join(" → ");
   }
 
   function displayPlace(value) {
@@ -309,7 +313,7 @@
     $("printEmployeeName").textContent = text(profile.name);
     $("printClaimRows").replaceChildren(...currentClaims.map((claim, index) => {
       const row = document.createElement("tr");
-      [index + 1, claim.date, `${displayPlace(claim.origin)} → ${displayPlace(claim.destination)}`,
+      [index + 1, claim.date, routeText(claim),
         `${text(claim.transport)}／${text(claim.direction)}`, money(claim.amount)
       ].forEach((value) => {
         const cell = document.createElement("td");
@@ -329,7 +333,30 @@
     $("claimDialogTitle").textContent = "新增車費";
     $("saveButton").textContent = "儲存車費";
     $("formError").textContent = "";
+    $("transferList").replaceChildren();
   }
+
+  function addTransfer(value = "") {
+    if ($("transferList").children.length >= 6) return;
+    const row = document.createElement("div");
+    row.className = "transfer-row";
+    const input = document.createElement("input");
+    input.className = "transfer-input";
+    input.type = "text";
+    input.placeholder = "例如：中環轉船";
+    input.autocomplete = "off";
+    input.value = value;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.setAttribute("aria-label", "移除中途轉乘");
+    remove.textContent = "×";
+    remove.addEventListener("click", () => row.remove());
+    row.append(input, remove);
+    $("transferList").appendChild(row);
+    input.focus();
+  }
+
+  $("addTransferButton").addEventListener("click", () => addTransfer());
 
   function populateLocation(prefix, value) {
     if (applyStation(prefix, displayPlace(value))) return;
@@ -360,6 +387,7 @@
     $("amount").value = Number(claim.amount).toFixed(2);
     $("claimForm").elements.project.value = claim.project || "";
     $("claimForm").elements.notes.value = claim.notes || "";
+    (claim.transfers || []).forEach(addTransfer);
     $("claimDialog").showModal();
   }
 
@@ -415,6 +443,7 @@
     const button = $("saveButton"); button.disabled = true; $("formError").textContent = "";
     try {
       const values = Object.fromEntries(new FormData(form));
+      values.transfers = [...form.querySelectorAll(".transfer-input")].map((input) => input.value.trim()).filter(Boolean);
       if (!values.origin || !values.destination) throw new Error("請完成選擇起點及終點。");
       if (editingClaimId) await api("updateClaim", {...values, id:editingClaimId});
       else await api("createClaim", values);
